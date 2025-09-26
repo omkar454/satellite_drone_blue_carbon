@@ -25,7 +25,7 @@ export default function NDVIMap({ polygons }) {
       const res = await axios.post("http://localhost:5000/api/ndvi", {
         polygonId: polygon._id,
         geometry: polygon.geometry,
-        startDate: "2025-09-01", // example date, can be dynamic
+        startDate: "2025-09-01",
         endDate: "2025-09-25",
       });
 
@@ -41,7 +41,7 @@ export default function NDVIMap({ polygons }) {
   };
 
   return (
-    <div className="p-4 bg-gray-50 rounded shadow-md max-w-xl mx-auto mt-4">
+    <div className="p-4 bg-gray-50 rounded shadow-md max-w-xl mx-auto">
       <h2 className="text-lg font-semibold mb-2">NDVI Analysis</h2>
 
       <select
@@ -50,7 +50,7 @@ export default function NDVIMap({ polygons }) {
         onChange={handlePolygonChange}
       >
         <option value="">Select a polygon</option>
-        {polygons.map((poly) => (
+        {(polygons || []).map((poly) => (
           <option key={poly._id} value={poly._id}>
             {poly.name}
           </option>

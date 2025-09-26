@@ -1,4 +1,3 @@
-// models/ndviResults.js
 import mongoose from "mongoose";
 
 const ndviResultSchema = new mongoose.Schema(
@@ -10,8 +9,8 @@ const ndviResultSchema = new mongoose.Schema(
     },
     startDate: { type: Date },
     endDate: { type: Date },
-    ndviValue: { type: Number }, // average NDVI for polygon
-    ndviMapURL: { type: String }, // optional: generated map/image
+    ndviValue: { type: Number }, // average NDVI
+    ndviMapURL: { type: String }, // map image URL
   },
   { timestamps: true }
 );

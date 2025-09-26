@@ -1,10 +1,12 @@
-// routes/ndviRoutes.js
 import express from "express";
-import { getNDVI } from "../controllers/ndviController.js";
+import { getNDVI, getNDVIComparison } from "../controllers/ndviController.js";
 
 const router = express.Router();
 
-// POST /api/ndvi
+// single NDVI
 router.post("/", getNDVI);
+
+// before vs after comparison
+router.post("/compare", getNDVIComparison);
 
 export default router;

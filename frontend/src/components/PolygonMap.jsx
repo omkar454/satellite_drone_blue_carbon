@@ -6,34 +6,20 @@ import {
   Popup,
 } from "react-leaflet";
 import { EditControl } from "react-leaflet-draw";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import axios from "axios";
 
-export default function PolygonMap() {
-  const [polygons, setPolygons] = useState([]);
-
-  // Fetch polygons from backend
-  useEffect(() => {
-    const fetchPolygons = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/polygons");
-        setPolygons(res.data);
-      } catch (err) {
-        console.error("Error fetching polygons:", err);
-      }
-    };
-    fetchPolygons();
-  }, []);
-
+export default function PolygonMap({ polygons, setPolygons }) {
   // Handle polygon creation
   const onCreated = async (e) => {
     const { layer } = e;
     let latlngs = layer.getLatLngs();
 
-    // Leaflet polygon can be nested array
+    // Handle nested array structure from Leaflet
     if (Array.isArray(latlngs[0][0])) latlngs = latlngs[0];
     else latlngs = latlngs[0];
 
+    // Ensure at least 3 points
     if (latlngs.length < 3) {
       alert("Polygon must have at least 3 points!");
       return;
@@ -42,7 +28,7 @@ export default function PolygonMap() {
     // Convert to GeoJSON [lng, lat]
     let coordinates = latlngs.map((latlng) => [latlng.lng, latlng.lat]);
 
-    // Close the polygon loop (first point = last point)
+    // Close polygon loop
     if (
       coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
       coordinates[0][1] !== coordinates[coordinates.length - 1][1]
@@ -51,11 +37,7 @@ export default function PolygonMap() {
     }
 
     const geometry = { type: "Polygon", coordinates: [coordinates] };
-
-    const newPolygon = {
-      name: `Polygon ${Date.now()}`,
-      geometry,
-    };
+    const newPolygon = { name: `Polygon ${Date.now()}`, geometry };
 
     try {
       const res = await axios.post(
@@ -73,9 +55,9 @@ export default function PolygonMap() {
 
   return (
     <MapContainer
-      center={[19.076, 72.8777]} // Mumbai
+      center={[19.076, 72.8777]}
       zoom={12}
-      style={{ height: "100vh", width: "100%" }}
+      style={{ height: "100%", width: "100%" }}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
@@ -93,7 +75,7 @@ export default function PolygonMap() {
         />
       </FeatureGroup>
 
-      {polygons.map((poly) => (
+      {(polygons || []).map((poly) => (
         <Polygon
           key={poly._id}
           positions={poly.geometry.coordinates[0].map(([lng, lat]) => [
@@ -105,7 +87,7 @@ export default function PolygonMap() {
           <Popup>
             <strong>{poly.name}</strong>
             <br />
-            Area: {poly.area.toFixed(2)} hectares
+            Area: {poly.area?.toFixed(2) || 0} hectares
           </Popup>
         </Polygon>
       ))}

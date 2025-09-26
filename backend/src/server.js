@@ -2,14 +2,14 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
-import polygonRoutes from "./routes/PolygonRoutes.js";
+import polygonRoutes from "./routes/polygonRoutes.js";
 import ndviRoutes from "./routes/ndviRoutes.js";
 
 dotenv.config(
     {
-        path:"./.env"
+        path:"../.env"
     }
-);
+); // no need for custom path unless .env is outside root
 connectDB();
 
 const app = express();
@@ -18,12 +18,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/polygons", polygonRoutes);
-// After polygon routes
 app.use("/api/ndvi", ndviRoutes);
-
-
-// Root test route
-app.get("/", (req, res) => res.send("Server is running"));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
