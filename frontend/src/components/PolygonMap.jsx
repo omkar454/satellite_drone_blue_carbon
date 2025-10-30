@@ -4,31 +4,30 @@ import {
   FeatureGroup,
   Polygon,
   Popup,
+  useMap,
 } from "react-leaflet";
 import { EditControl } from "react-leaflet-draw";
-import { useEffect } from "react";
+import leafletImage from "leaflet-image";
 import axios from "axios";
 
 export default function PolygonMap({ polygons, setPolygons }) {
-  // Handle polygon creation
+  // Hook to access the Leaflet map instance
+  const MapHandler = () => {
+    const map = useMap();
+    return null;
+  };
+
   const onCreated = async (e) => {
+    const map = e.target._map; // Leaflet map instance
     const { layer } = e;
     let latlngs = layer.getLatLngs();
-
-    // Handle nested array structure from Leaflet
     if (Array.isArray(latlngs[0][0])) latlngs = latlngs[0];
     else latlngs = latlngs[0];
 
-    // Ensure at least 3 points
-    if (latlngs.length < 3) {
-      alert("Polygon must have at least 3 points!");
-      return;
-    }
+    if (latlngs.length < 3)
+      return alert("Polygon must have at least 3 points!");
 
-    // Convert to GeoJSON [lng, lat]
     let coordinates = latlngs.map((latlng) => [latlng.lng, latlng.lat]);
-
-    // Close polygon loop
     if (
       coordinates[0][0] !== coordinates[coordinates.length - 1][0] ||
       coordinates[0][1] !== coordinates[coordinates.length - 1][1]
@@ -37,19 +36,49 @@ export default function PolygonMap({ polygons, setPolygons }) {
     }
 
     const geometry = { type: "Polygon", coordinates: [coordinates] };
-    const newPolygon = { name: `Polygon ${Date.now()}`, geometry };
+    const polygonName = `Polygon ${Date.now()}`;
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/polygons",
-        newPolygon
-      );
-      setPolygons((prev) => [...prev, res.data]);
+      if (!map) throw new Error("Map instance not found");
+
+      // Capture map snapshot
+      leafletImage(map, async (err, canvas) => {
+        if (err) return alert("Failed to capture map");
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) return alert("Failed to generate image blob");
+
+          const file = new File([blob], `${polygonName}.png`, {
+            type: "image/png",
+          });
+          const formData = new FormData();
+          formData.append("file", file);
+
+          // Upload snapshot to Pinata
+          const ipfsRes = await axios.post(
+            "http://localhost:5000/api/ipfs/upload",
+            formData,
+            { headers: { "Content-Type": "multipart/form-data" } }
+          );
+
+          const snapshotURL = ipfsRes.data.url;
+
+          // Save polygon with snapshot URL
+          const polygonRes = await axios.post(
+            "http://localhost:5000/api/polygons",
+            {
+              name: polygonName,
+              geometry,
+              snapshotURL,
+            }
+          );
+
+          setPolygons((prev) => [...prev, polygonRes.data]);
+        });
+      });
     } catch (err) {
-      console.error("Error saving polygon:", err.response?.data || err);
-      alert(
-        "Error saving polygon: " + (err.response?.data?.message || err.message)
-      );
+      console.error("Pinata upload error:", err);
+      alert("Failed to upload snapshot to Pinata");
     }
   };
 
@@ -60,7 +89,7 @@ export default function PolygonMap({ polygons, setPolygons }) {
       style={{ height: "100%", width: "100%" }}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
+      <MapHandler />
       <FeatureGroup>
         <EditControl
           position="topright"
@@ -88,6 +117,14 @@ export default function PolygonMap({ polygons, setPolygons }) {
             <strong>{poly.name}</strong>
             <br />
             Area: {poly.area?.toFixed(2) || 0} hectares
+            <br />
+            {poly.snapshotURL && (
+              <img
+                src={poly.snapshotURL}
+                alt="Snapshot"
+                className="mt-1 border w-full"
+              />
+            )}
           </Popup>
         </Polygon>
       ))}

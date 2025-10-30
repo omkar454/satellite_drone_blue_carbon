@@ -1,17 +1,19 @@
 import NDVIResult from "../models/ndviResults.js";
+import { fetchNDVIImage } from "../utils/ndviFetcher.js";
 
-// Single NDVI
+// Single NDVI calculation and save
 export const getNDVI = async (req, res) => {
   try {
-    const { polygonId, geometry, startDate, endDate } = req.body;
+    const { polygonId, geometry, startDate, endDate, pinataURL } = req.body;
 
     if (!geometry || !geometry.coordinates) {
       return res.status(400).json({ message: "Polygon geometry is required" });
     }
 
-    // Simulated NDVI
-    const ndviValue = parseFloat((Math.random() * 0.8 + 0.2).toFixed(2));
-    const ndviMapURL = `https://via.placeholder.com/400x400.png?text=NDVI+${ndviValue}`;
+    // Simulate NDVI if real API is not yet integrated
+    const { ndviValue, ndviMapURL } = pinataURL
+      ? { ndviValue: Math.random().toFixed(2), ndviMapURL: pinataURL }
+      : await fetchNDVIImage(geometry, startDate, endDate);
 
     const result = await NDVIResult.create({
       polygonId,
@@ -37,7 +39,7 @@ export const getNDVIComparison = async (req, res) => {
       return res.status(400).json({ message: "Polygon geometry is required" });
     }
 
-    // Simulate NDVI values
+    // Simulate NDVI for now
     const beforeNDVI = parseFloat((Math.random() * 0.5 + 0.2).toFixed(2));
     const afterNDVI = parseFloat((Math.random() * 0.5 + 0.5).toFixed(2));
 

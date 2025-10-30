@@ -2,35 +2,16 @@ import mongoose from "mongoose";
 
 const polygonSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-    area: {
-      type: Number, // hectares
-      required: true,
-    },
+    name: { type: String, required: true },
+    area: { type: Number, required: true },
     geometry: {
-      type: {
-        type: String,
-        enum: ["Polygon"],
-        required: true,
-      },
-      coordinates: {
-        type: [[[Number]]], // [[[lng, lat], ...]]
-        required: true,
-      },
+      type: { type: String, enum: ["Polygon"], required: true },
+      coordinates: { type: [[[Number]]], required: true },
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+    snapshotURL: { type: String }, // store Pinata URL
   },
   { timestamps: true }
 );
 
-// Enable geospatial queries
 polygonSchema.index({ geometry: "2dsphere" });
-
-const Polygon = mongoose.model("Polygon", polygonSchema);
-export default Polygon;
+export default mongoose.model("Polygon", polygonSchema);
